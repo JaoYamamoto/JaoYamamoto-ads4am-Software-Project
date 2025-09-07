@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Livro - Minha Biblioteca{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-plus-circle"></i>
+            Adicionar Novo Livro
+        </h1>
+        <p class="page-subtitle">Adicione um novo livro à sua coleção</p>
+    </div>
+
+    <div class="form-container">
+        <form id="addBookForm" class="book-form">
+            <div class="form-group">
+                <label for="title">
+                    <i class="fas fa-book"></i>
+                    Título *
+                </label>
+                <input type="text" id="title" name="title" required class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label for="author">
+                    <i class="fas fa-user-edit"></i>
+                    Autor *
+                </label>
+                <input type="text" id="author" name="author" required class="form-input">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="year">
+                        <i class="fas fa-calendar"></i>
+                        Ano de Publicação
+                    </label>
+                    <input type="number" id="year" name="year" min="1000" max="2025" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="genre">
+                        <i class="fas fa-tags"></i>
+                        Gênero
+                    </label>
+                    <input type="text" id="genre" name="genre" class="form-input" list="genreList">
+                    <datalist id="genreList">
+                        <option value="Ficção">
+                        <option value="Romance">
+                        <option value="Mistério">
+                        <option value="Fantasia">
+                        <option value="Ficção Científica">
+                        <option value="Biografia">
+                        <option value="História">
+                        <option value="Autoajuda">
+                        <option value="Técnico">
+                        <option value="Infantil">
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">
+                    <i class="fas fa-align-left"></i>
+                    Descrição
+                </label>
+                <textarea id="description" name="description" rows="4" class="form-textarea" placeholder="Breve descrição do livro..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Salvar Livro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de sucesso -->
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sucesso!</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Livro adicionado com sucesso à sua coleção!</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeSuccessModal()">OK</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/add_book.js') }}"></script>
+{% endblock %}
+
