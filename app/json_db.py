@@ -5,16 +5,13 @@ from typing import List, Dict, Optional
 class JSONDatabase:
     def __init__(self, db_file: str = 'books.json'):
         """
-        Inicializa o banco de dados JSON.
+        Inicializa o .json
         
-        Args:
-            db_file: Caminho para o arquivo JSON que armazenará os dados
         """
         self.db_file = db_file
         self._ensure_db_exists()
     
     def _ensure_db_exists(self):
-        """Garante que o arquivo JSON existe e tem a estrutura correta."""
         if not os.path.exists(self.db_file):
             initial_data = {
                 'books': [],
@@ -24,7 +21,7 @@ class JSONDatabase:
                 json.dump(initial_data, f, ensure_ascii=False, indent=2)
     
     def _read_data(self) -> Dict:
-        """Lê os dados do arquivo JSON."""
+        """Lê o .json"""
         try:
             with open(self.db_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -35,12 +32,12 @@ class JSONDatabase:
                 return json.load(f)
     
     def _write_data(self, data: Dict):
-        """Escreve os dados no arquivo JSON."""
+        """Escreve no .json"""
         with open(self.db_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
     def get_all_books(self) -> List[Dict]:
-        """Retorna todos os livros."""
+        """Retorna os livros."""
         data = self._read_data()
         return data['books']
     
@@ -48,11 +45,6 @@ class JSONDatabase:
         """
         Retorna um livro específico pelo ID.
         
-        Args:
-            book_id: ID do livro
-            
-        Returns:
-            Dicionário com os dados do livro ou None se não encontrado
         """
         data = self._read_data()
         for book in data['books']:
@@ -65,15 +57,6 @@ class JSONDatabase:
         """
         Cria um novo livro.
         
-        Args:
-            title: Título do livro (obrigatório)
-            author: Autor do livro (obrigatório)
-            year: Ano de publicação (opcional)
-            genre: Gênero do livro (opcional)
-            description: Descrição do livro (opcional)
-            
-        Returns:
-            Dicionário com os dados do livro criado
         """
         data = self._read_data()
         
@@ -98,16 +81,6 @@ class JSONDatabase:
         """
         Atualiza um livro existente.
         
-        Args:
-            book_id: ID do livro a ser atualizado
-            title: Novo título (opcional)
-            author: Novo autor (opcional)
-            year: Novo ano (opcional)
-            genre: Novo gênero (opcional)
-            description: Nova descrição (opcional)
-            
-        Returns:
-            Dicionário com os dados do livro atualizado ou None se não encontrado
         """
         data = self._read_data()
         
@@ -135,11 +108,6 @@ class JSONDatabase:
         """
         Deleta um livro.
         
-        Args:
-            book_id: ID do livro a ser deletado
-            
-        Returns:
-            True se o livro foi deletado, False se não foi encontrado
         """
         data = self._read_data()
         
@@ -155,11 +123,6 @@ class JSONDatabase:
         """
         Busca livros por título, autor ou gênero.
         
-        Args:
-            query: Termo de busca
-            
-        Returns:
-            Lista de livros que correspondem à busca
         """
         if not query:
             return self.get_all_books()
@@ -181,11 +144,6 @@ class JSONDatabase:
         """
         Filtra livros por gênero.
         
-        Args:
-            genre: Gênero para filtrar
-            
-        Returns:
-            Lista de livros do gênero especificado
         """
         if not genre or genre.lower() == 'todos':
             return self.get_all_books()
@@ -203,8 +161,6 @@ class JSONDatabase:
         """
         Retorna uma lista de todos os gêneros únicos.
         
-        Returns:
-            Lista de gêneros únicos
         """
         data = self._read_data()
         genres = set()
@@ -220,8 +176,6 @@ class JSONDatabase:
         """
         Retorna uma lista de todos os autores únicos.
         
-        Returns:
-            Lista de autores únicos
         """
         data = self._read_data()
         authors = set()
@@ -237,8 +191,6 @@ class JSONDatabase:
         """
         Retorna estatísticas da coleção.
         
-        Returns:
-            Dicionário com estatísticas (total de livros, gêneros, autores)
         """
         data = self._read_data()
         
@@ -249,6 +201,5 @@ class JSONDatabase:
         }
 
 
-# Instância global do banco de dados JSON
 db = JSONDatabase()
 
