@@ -1,28 +1,12 @@
 {
   "books": [
     {
-      "id": 1,
-      "title": "1984",
-      "author": "George Orwell",
-      "year": 1949,
-      "genre": "Ficção Científica",
-      "description": "Romance distópico que retrata uma sociedade totalitária onde o governo controla todos os aspectos da vida dos cidadãos."
-    },
-    {
       "id": 2,
       "title": "Homo Ludens",
       "author": "Johan Huizinga",
       "year": 1938,
       "genre": "Filosofia",
       "description": "Homo ludens é a obra mais importante na filosofia da história em nosso século. Escritor de inteligência aguda e poderosa, ajudado por um dom de expressão e exposição que é muito raro, huizinga reúne e interpreta um dos elementos fundamentais da cultura humana: o instinto do jogo. Lendo este volume, logo se descobre quão profundamente as realizações na lei, na ciência, na poesia, na guerra, na filosofia e nas artes são nutridas pelo instinto do jogo. [Roger Caillois]. Reedição, revista e reestrutu­rada com tradução do filósofo luso-brasileiro João Paulo Monteiro revista e adaptada por Newton Cunha."
-    },
-    {
-      "id": 3,
-      "title": "A Revolução dos Bichos",
-      "author": "George Orwell",
-      "year": 1945,
-      "genre": "Romance",
-      "description": "A Revolução dos Bichos\", de George Orwell, é uma fábula satírica sobre uma revolução de animais numa fazenda, que expulsa os humanos exploradores na esperança de criar uma sociedade igualitária, mas que degenera em tirania por conta da ganância."
     }
   ],
   "next_id": 4
