@@ -35,7 +35,12 @@
         {% block content %}{% endblock %}
     </main>
 
-   
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Minha Biblioteca. Organize sua coleção de livros.</p>
+        </div>
+    </footer>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

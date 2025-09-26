@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
-from app.json_db import db
+from app import db
+from app.models import Book
+from sqlalchemy import func
 
 main = Blueprint('main', __name__)
 
@@ -11,26 +13,29 @@ def index():
 @main.route('/api/books', methods=['GET'])
 def get_books():
     """API para obter todos os livros"""
-    # Verifica se há parâmetros de busca ou filtro
     search_query = request.args.get('search', '').strip()
     genre_filter = request.args.get('genre', '').strip()
-    
+
+    books_query = Book.query
+
     if search_query:
-        books = db.search_books(search_query)
-    elif genre_filter and genre_filter.lower() != 'todos':
-        books = db.filter_by_genre(genre_filter)
-    else:
-        books = db.get_all_books()
+        books_query = books_query.filter(
+            (Book.title.ilike(f'%{search_query}%')) |
+            (Book.author.ilike(f'%{search_query}%')) |
+            (Book.genre.ilike(f'%{search_query}%'))
+        )
     
-    return jsonify(books)
+    if genre_filter and genre_filter.lower() != 'todos':
+        books_query = books_query.filter(Book.genre.ilike(f'%{genre_filter}%'))
+
+    books = books_query.all()
+    return jsonify([book.to_dict() for book in books])
 
 @main.route('/api/books/<int:book_id>', methods=['GET'])
 def get_book(book_id):
     """API para obter um livro específico"""
-    book = db.get_book_by_id(book_id)
-    if not book:
-        return jsonify({'error': 'Livro não encontrado'}), 404
-    return jsonify(book)
+    book = Book.query.get_or_404(book_id)
+    return jsonify(book.to_dict())
 
 @main.route('/api/books', methods=['POST'])
 def create_book():
@@ -40,81 +45,71 @@ def create_book():
     if not data or not data.get('title') or not data.get('author'):
         return jsonify({'error': 'Título e autor são obrigatórios'}), 400
     
-    try:
-        book = db.create_book(
-            title=data['title'],
-            author=data['author'],
-            year=data.get('year'),
-            genre=data.get('genre'),
-            description=data.get('description')
-        )
-        return jsonify(book), 201
-    except Exception as e:
-        return jsonify({'error': f'Erro ao criar livro: {str(e)}'}), 500
+    book = Book(
+        title=data['title'],
+        author=data['author'],
+        year=data.get('year'),
+        genre=data.get('genre'),
+        description=data.get('description')
+    )
+    
+    db.session.add(book)
+    db.session.commit()
+    
+    return jsonify(book.to_dict()), 201
 
 @main.route('/api/books/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
     """API para atualizar um livro"""
+    book = Book.query.get_or_404(book_id)
     data = request.get_json()
     
     if not data:
         return jsonify({'error': 'Dados não fornecidos'}), 400
     
-    try:
-        book = db.update_book(
-            book_id=book_id,
-            title=data.get('title'),
-            author=data.get('author'),
-            year=data.get('year'),
-            genre=data.get('genre'),
-            description=data.get('description')
-        )
-        
-        if not book:
-            return jsonify({'error': 'Livro não encontrado'}), 404
-        
-        return jsonify(book)
-    except Exception as e:
-        return jsonify({'error': f'Erro ao atualizar livro: {str(e)}'}), 500
+    book.title = data.get('title', book.title)
+    book.author = data.get('author', book.author)
+    book.year = data.get('year', book.year)
+    book.genre = data.get('genre', book.genre)
+    book.description = data.get('description', book.description)
+    
+    db.session.commit()
+    
+    return jsonify(book.to_dict())
 
 @main.route('/api/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     """API para deletar um livro"""
-    try:
-        success = db.delete_book(book_id)
-        if not success:
-            return jsonify({'error': 'Livro não encontrado'}), 404
-        
-        return jsonify({'message': 'Livro deletado com sucesso'}), 200
-    except Exception as e:
-        return jsonify({'error': f'Erro ao deletar livro: {str(e)}'}), 500
+    book = Book.query.get_or_404(book_id)
+    db.session.delete(book)
+    db.session.commit()
+    
+    return jsonify({'message': 'Livro deletado com sucesso'}), 200
 
 @main.route('/api/genres', methods=['GET'])
 def get_genres():
     """API para obter todos os gêneros únicos"""
-    try:
-        genres = db.get_genres()
-        return jsonify(genres)
-    except Exception as e:
-        return jsonify({'error': f'Erro ao obter gêneros: {str(e)}'}), 500
+    genres = db.session.query(Book.genre).filter(Book.genre.isnot(None)).distinct().all()
+    return jsonify(sorted([g[0] for g in genres if g[0].strip()]))
 
 @main.route('/api/authors', methods=['GET'])
 def get_authors():
     """API para obter todos os autores únicos"""
-    try:
-        authors = db.get_authors()
-        return jsonify(authors)
-    except Exception as e:
-        return jsonify({'error': f'Erro ao obter autores: {str(e)}'}), 500
+    authors = db.session.query(Book.author).filter(Book.author.isnot(None)).distinct().all()
+    return jsonify(sorted([a[0] for a in authors if a[0].strip()]))
 
 @main.route('/api/stats', methods=['GET'])
 def get_stats():
     """API para obter estatísticas da coleção"""
-    try:
-        stats = db.get_stats()
-        return jsonify(stats)
-    except Exception as e:
-        return jsonify({'error': f'Erro ao obter estatísticas: {str(e)}'}), 500
+    total_books = Book.query.count()
+    total_genres = db.session.query(func.count(Book.genre.distinct())).filter(Book.genre.isnot(None)).scalar()
+    total_authors = db.session.query(func.count(Book.author.distinct())).filter(Book.author.isnot(None)).scalar()
+    
+    return jsonify({
+        'total_books': total_books,
+        'total_genres': total_genres,
+        'total_authors': total_authors
+    })
 
 @main.route('/add')
 def add_book_page():
@@ -125,4 +120,5 @@ def add_book_page():
 def edit_book_page(book_id):
     """Página para editar livro"""
     return render_template('edit_book.html', book_id=book_id)
+
 
