@@ -122,3 +122,79 @@ def edit_book_page(book_id):
     return render_template('edit_book.html', book_id=book_id)
 
 
+
+@main.route('/api/search-google-books', methods=['GET'])
+def search_google_books():
+    """API para buscar livros na Google Books API"""
+    import requests
+    import urllib.parse
+    
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'error': 'Parâmetro de busca (q) é obrigatório'}), 400
+    
+    try:
+        # Codifica a query para URL
+        encoded_query = urllib.parse.quote(query)
+        
+        # URL da Google Books API
+        api_url = f'https://www.googleapis.com/books/v1/volumes?q={encoded_query}&maxResults=5'
+        
+        # Faz a requisição para a Google Books API
+        response = requests.get(api_url, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        books = []
+        
+        # Processa os resultados
+        if 'items' in data:
+            for item in data['items']:
+                volume_info = item.get('volumeInfo', {})
+                
+                # Extrai as informações do livro
+                book_data = {
+                    'title': volume_info.get('title', ''),
+                    'authors': volume_info.get('authors', []),
+                    'author': ', '.join(volume_info.get('authors', [])),
+                    'publishedDate': volume_info.get('publishedDate', ''),
+                    'year': None,
+                    'description': volume_info.get('description', ''),
+                    'categories': volume_info.get('categories', []),
+                    'genre': ', '.join(volume_info.get('categories', [])),
+                    'pageCount': volume_info.get('pageCount'),
+                    'language': volume_info.get('language', ''),
+                    'thumbnail': volume_info.get('imageLinks', {}).get('thumbnail', ''),
+                    'publisher': volume_info.get('publisher', ''),
+                    'isbn': None
+                }
+                
+                # Extrai o ano da data de publicação
+                if book_data['publishedDate']:
+                    try:
+                        # Tenta extrair o ano (formato pode ser YYYY, YYYY-MM, YYYY-MM-DD)
+                        year_str = book_data['publishedDate'].split('-')[0]
+                        if year_str.isdigit() and len(year_str) == 4:
+                            book_data['year'] = int(year_str)
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Extrai ISBN se disponível
+                industry_identifiers = volume_info.get('industryIdentifiers', [])
+                for identifier in industry_identifiers:
+                    if identifier.get('type') in ['ISBN_13', 'ISBN_10']:
+                        book_data['isbn'] = identifier.get('identifier')
+                        break
+                
+                books.append(book_data)
+        
+        return jsonify({
+            'success': True,
+            'totalItems': data.get('totalItems', 0),
+            'books': books
+        })
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Erro ao conectar com a Google Books API: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Erro interno: {str(e)}'}), 500

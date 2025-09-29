@@ -319,3 +319,162 @@ if (!document.querySelector('#form-error-styles')) {
     document.head.appendChild(style);
 }
 
+
+// Google Books API Integration for Edit Page
+document.addEventListener('DOMContentLoaded', function() {
+    setupGoogleBooksSearch();
+});
+
+function setupGoogleBooksSearch() {
+    const searchInput = document.getElementById('googleBooksQuery');
+    const searchButton = document.getElementById('searchGoogleBooks');
+    const resultsContainer = document.getElementById('searchResults');
+    
+    if (!searchInput || !searchButton || !resultsContainer) return;
+    
+    // Event listeners
+    searchButton.addEventListener('click', performGoogleBooksSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performGoogleBooksSearch();
+        }
+    });
+    
+    // Limpar resultados quando o input for limpo
+    searchInput.addEventListener('input', function() {
+        if (!this.value.trim()) {
+            hideSearchResults();
+        }
+    });
+}
+
+async function performGoogleBooksSearch() {
+    const searchInput = document.getElementById('googleBooksQuery');
+    const searchButton = document.getElementById('searchGoogleBooks');
+    const resultsContainer = document.getElementById('searchResults');
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        showNotification('Digite o nome do livro para buscar', 'warning');
+        return;
+    }
+    
+    try {
+        // Mostrar loading
+        setSearchButtonLoading(searchButton, true);
+        showSearchLoading(resultsContainer);
+        
+        // Fazer requisição para a API
+        const response = await fetch(`/api/search-google-books?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Erro na busca');
+        }
+        
+        // Mostrar resultados
+        displaySearchResults(data, resultsContainer);
+        
+    } catch (error) {
+        console.error('Erro na busca:', error);
+        showSearchError(resultsContainer, error.message);
+    } finally {
+        setSearchButtonLoading(searchButton, false);
+    }
+}
+
+function showSearchLoading(container) {
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="search-loading">
+            <i class="fas fa-spinner"></i>
+            Buscando livros na Google Books...
+        </div>
+    `;
+}
+
+function displaySearchResults(data, container) {
+    container.style.display = 'block';
+    
+    if (!data.books || data.books.length === 0) {
+        container.innerHTML = `
+            <div class="search-no-results">
+                <i class="fas fa-search"></i>
+                Nenhum livro encontrado. Tente uma busca diferente.
+            </div>
+        `;
+        return;
+    }
+    
+    const resultsHTML = data.books.map(book => `
+        <div class="search-result-item" onclick="selectGoogleBook(${JSON.stringify(book).replace(/"/g, '&quot;')})">
+            <img src="${book.thumbnail || '/static/img/book-placeholder.png'}" 
+                 alt="${book.title}" 
+                 class="result-thumbnail"
+                 onerror="this.src='/static/img/book-placeholder.png'">
+            <div class="result-info">
+                <div class="result-title">${book.title}</div>
+                <div class="result-author">${book.author || 'Autor não informado'}</div>
+                <div class="result-details">
+                    ${book.year ? `${book.year} • ` : ''}
+                    ${book.genre || 'Gênero não informado'}
+                    ${book.publisher ? ` • ${book.publisher}` : ''}
+                </div>
+                <div class="result-description">
+                    ${book.description ? book.description.substring(0, 150) + '...' : 'Descrição não disponível'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = resultsHTML;
+}
+
+function selectGoogleBook(book) {
+    // Preencher os campos do formulário
+    document.getElementById('title').value = book.title || '';
+    document.getElementById('author').value = book.author || '';
+    document.getElementById('year').value = book.year || '';
+    document.getElementById('genre').value = book.genre || '';
+    document.getElementById('description').value = book.description || '';
+    
+    // Limpar a busca
+    document.getElementById('googleBooksQuery').value = '';
+    hideSearchResults();
+    
+    // Mostrar notificação de sucesso
+    showNotification('Campos atualizados automaticamente!', 'success');
+    
+    // Focar no primeiro campo para o usuário revisar
+    document.getElementById('title').focus();
+}
+
+function showSearchError(container, message) {
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="search-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            Erro na busca: ${message}
+        </div>
+    `;
+}
+
+function hideSearchResults() {
+    const resultsContainer = document.getElementById('searchResults');
+    if (resultsContainer) {
+        resultsContainer.style.display = 'none';
+        resultsContainer.innerHTML = '';
+    }
+}
+
+function setSearchButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+    } else {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-search"></i> Buscar';
+    }
+}
+
