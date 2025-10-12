@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     setupForm();
     setupModal();
+    setupGoogleBooksSearch(); // Configura a busca da Google Books API
 });
 
 // Configurar formulário
@@ -30,7 +31,9 @@ function setupModal() {
     const modal = document.getElementById('successModal');
     const closeBtn = modal.querySelector('.close');
     
-    closeBtn.addEventListener('click', closeSuccessModal);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSuccessModal);
+    }
     
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
@@ -44,6 +47,7 @@ async function handleSubmit(event) {
     event.preventDefault();
     
     if (!validateForm()) {
+        showNotification('warning', 'Por favor, preencha todos os campos obrigatórios corretamente.');
         return;
     }
     
@@ -54,14 +58,27 @@ async function handleSubmit(event) {
         // Desabilitar botão e mostrar loading
         setButtonLoading(submitButton, true);
         
-        await BookAPI.post('/api/books', formData);
+        const response = await fetch('/api/books', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
         
-        showSuccessModal();
-        clearForm();
+        if (response.ok) {
+            showNotification('success', data.message);
+            showSuccessModal();
+            clearForm();
+        } else {
+            showNotification('error', data.error || 'Erro ao adicionar livro. Tente novamente.');
+        }
         
     } catch (error) {
         console.error('Erro ao adicionar livro:', error);
-        showNotification('Erro ao adicionar livro. Tente novamente.', 'error');
+        showNotification('error', 'Erro de conexão. Tente novamente.');
     } finally {
         setButtonLoading(submitButton, false);
     }
@@ -117,7 +134,7 @@ function validateField(event) {
     const field = event.target;
     const value = field.value.trim();
     
-    clearFieldError(event);
+    clearFieldError({ target: field });
     
     if (field.required && !value) {
         showFieldError(field, 'Este campo é obrigatório');
@@ -137,7 +154,7 @@ function validateYear(event) {
     const field = event.target;
     const value = field.value;
     
-    clearFieldError(event);
+    clearFieldError({ target: field });
     
     if (value && (isNaN(value) || value < 1000 || value > new Date().getFullYear() + 1)) {
         showFieldError(field, 'Digite um ano válido');
@@ -159,18 +176,6 @@ function showFieldError(field, message) {
     const errorElement = document.createElement('div');
     errorElement.className = 'field-error-message';
     errorElement.textContent = message;
-    
-    // Adiciona estilos
-    errorElement.style.cssText = `
-        color: #dc3545;
-        font-size: 0.85rem;
-        margin-top: 5px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    `;
-    
-    errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
     
     // Insere após o campo
     field.parentNode.insertBefore(errorElement, field.nextSibling);
@@ -232,40 +237,7 @@ function setButtonLoading(button, isLoading) {
     }
 }
 
-// Adicionar estilos para campos com erro
-if (!document.querySelector('#form-error-styles')) {
-    const style = document.createElement('style');
-    style.id = 'form-error-styles';
-    style.textContent = `
-        .field-error {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
-        }
-        
-        .field-error-message {
-            animation: slideDown 0.3s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-
 // Google Books API Integration
-document.addEventListener('DOMContentLoaded', function() {
-    setupGoogleBooksSearch();
-});
-
 function setupGoogleBooksSearch() {
     const searchInput = document.getElementById('googleBooksQuery');
     const searchButton = document.getElementById('searchGoogleBooks');
@@ -297,7 +269,7 @@ async function performGoogleBooksSearch() {
     
     const query = searchInput.value.trim();
     if (!query) {
-        showNotification('Digite o nome do livro para buscar', 'warning');
+        showNotification('warning', 'Digite o nome do livro para buscar');
         return;
     }
     
@@ -329,7 +301,7 @@ function showSearchLoading(container) {
     container.style.display = 'block';
     container.innerHTML = `
         <div class="search-loading">
-            <i class="fas fa-spinner"></i>
+            <i class="fas fa-spinner fa-spin"></i>
             Buscando livros na Google Books...
         </div>
     `;
@@ -349,7 +321,7 @@ function displaySearchResults(data, container) {
     }
     
     const resultsHTML = data.books.map(book => `
-        <div class="search-result-item" onclick="selectGoogleBook(${JSON.stringify(book).replace(/"/g, '&quot;')})">
+        <div class="search-result-item" onclick="selectGoogleBook(${escapeHtml(JSON.stringify(book))})">
             <img src="${book.thumbnail || '/static/img/book-placeholder.png'}" 
                  alt="${book.title}" 
                  class="result-thumbnail"
@@ -385,7 +357,7 @@ function selectGoogleBook(book) {
     hideSearchResults();
     
     // Mostrar notificação de sucesso
-    showNotification('Campos preenchidos automaticamente!', 'success');
+    showNotification('success', 'Campos preenchidos automaticamente!');
     
     // Focar no primeiro campo para o usuário revisar
     document.getElementById('title').focus();
@@ -419,97 +391,17 @@ function setSearchButtonLoading(button, isLoading) {
     }
 }
 
-// Função auxiliar para mostrar notificações
-function showNotification(message, type = 'info') {
-    // Remove notificação existente
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-    
-    // Cria nova notificação
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${getNotificationIcon(type)}"></i>
-        ${message}
-    `;
-    
-    // Estilos
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        animation: slideInRight 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        max-width: 400px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    `;
-    
-    // Cores por tipo
-    const colors = {
-        success: '#28a745',
-        error: '#dc3545',
-        warning: '#ffc107',
-        info: '#17a2b8'
+// Função auxiliar para escapar HTML (já deve estar em main.js, mas mantida aqui por segurança)
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
     };
-    
-    notification.style.backgroundColor = colors[type] || colors.info;
-    
-    // Adiciona ao DOM
-    document.body.appendChild(notification);
-    
-    // Remove após 4 segundos
-    setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 4000);
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-function getNotificationIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        error: 'exclamation-circle',
-        warning: 'exclamation-triangle',
-        info: 'info-circle'
-    };
-    return icons[type] || icons.info;
-}
-
-// Adicionar animações CSS para notificações
-if (!document.querySelector('#notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
 

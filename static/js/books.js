@@ -5,7 +5,9 @@ let bookToDeleteId = null;
 
 // Inicialização da página
 document.addEventListener('DOMContentLoaded', function() {
-    loadBooks();
+    // A função checkAuthStatus em auth.js já lida com a exibição da tela inicial
+    // e chama loadBooks se o usuário estiver autenticado.
+    // Não precisamos chamar loadBooks aqui diretamente.
     setupEventListeners();
 });
 
@@ -27,7 +29,9 @@ function setupEventListeners() {
     const modal = document.getElementById('deleteModal');
     const closeBtn = modal.querySelector('.close');
     
-    closeBtn.addEventListener('click', closeDeleteModal);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeDeleteModal);
+    }
     
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
@@ -40,7 +44,15 @@ function setupEventListeners() {
 async function loadBooks() {
     try {
         showLoading();
-        allBooks = await BookAPI.get('/api/books');
+        const response = await fetch('/api/books');
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Não autenticado, auth.js já deve ter redirecionado
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        allBooks = await response.json();
         filteredBooks = [...allBooks];
         
         renderBooks();
@@ -49,7 +61,7 @@ async function loadBooks() {
         
     } catch (error) {
         console.error('Erro ao carregar livros:', error);
-        showNotification('Erro ao carregar livros', 'error');
+        showNotification('error', 'Erro ao carregar livros.');
         showEmptyState();
     } finally {
         hideLoading();
@@ -60,14 +72,26 @@ async function loadBooks() {
 function renderBooks() {
     const container = document.getElementById('booksContainer');
     const emptyState = document.getElementById('emptyState');
+    const noResults = document.getElementById('noResults');
     
-    if (filteredBooks.length === 0) {
+    if (!container || !emptyState || !noResults) return;
+
+    if (allBooks.length === 0) {
         container.innerHTML = '';
         emptyState.style.display = 'block';
+        noResults.style.display = 'none';
         return;
     }
-    
+
     emptyState.style.display = 'none';
+
+    if (filteredBooks.length === 0) {
+        container.innerHTML = '';
+        noResults.style.display = 'block';
+        return;
+    }
+
+    noResults.style.display = 'none';
     
     container.innerHTML = filteredBooks.map(book => `
         <div class="book-card" data-book-id="${book.id}">
@@ -84,7 +108,7 @@ function renderBooks() {
             ` : ''}
             
             <div class="book-actions">
-                <a href="/edit/${book.id}" class="btn btn-secondary btn-small">
+                <a href="/edit-book/${book.id}" class="btn btn-secondary btn-small">
                     <i class="fas fa-edit"></i>
                     Editar
                 </a>
@@ -100,8 +124,11 @@ function renderBooks() {
 
 // Filtrar livros
 function filterBooks() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const selectedGenre = document.getElementById('genreFilter').value;
+    const searchInput = document.getElementById('searchInput');
+    const genreFilter = document.getElementById('genreFilter');
+
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+    const selectedGenre = genreFilter ? genreFilter.value : '';
     
     filteredBooks = allBooks.filter(book => {
         const matchesSearch = !searchTerm || 
@@ -164,7 +191,6 @@ function populateGenreFilter() {
 // Modal de exclusão
 function showDeleteModal(bookId, bookTitle) {
     bookToDeleteId = bookId;
-    document.getElementById('bookToDelete').textContent = bookTitle;
     document.getElementById('deleteModal').style.display = 'block';
 }
 
@@ -177,13 +203,22 @@ async function confirmDelete() {
     if (!bookToDeleteId) return;
     
     try {
-        await BookAPI.delete(`/api/books/${bookToDeleteId}`);
-        showNotification('Livro excluído com sucesso!');
-        closeDeleteModal();
-        loadBooks(); // Recarregar lista
+        const response = await fetch(`/api/books/${bookToDeleteId}`, {
+            method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('success', data.message);
+            closeDeleteModal();
+            loadBooks(); // Recarregar lista
+        } else {
+            showNotification('error', data.error || 'Erro ao excluir livro.');
+        }
     } catch (error) {
         console.error('Erro ao excluir livro:', error);
-        showNotification('Erro ao excluir livro', 'error');
+        showNotification('error', 'Erro de conexão. Tente novamente.');
     }
 }
 
@@ -240,4 +275,5 @@ function showEmptyState() {
         emptyState.style.display = 'block';
     }
 }
+
 

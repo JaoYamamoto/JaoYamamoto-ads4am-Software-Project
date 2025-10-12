@@ -3,7 +3,48 @@
 {% block title %}Minha Biblioteca - Início{% endblock %}
 
 {% block content %}
-<div class="container">
+<!-- Tela de boas-vindas para usuários não autenticados -->
+<div id="welcomeScreen" class="welcome-screen" style="display: none;">
+    <div class="welcome-content">
+        <div class="welcome-header">
+            <i class="fas fa-book-open welcome-icon"></i>
+            <h1>Bem-vindo à Minha Biblioteca</h1>
+            <p class="welcome-subtitle">Organize e gerencie sua coleção de livros pessoal</p>
+        </div>
+        
+        <div class="welcome-features">
+            <div class="feature-card">
+                <i class="fas fa-plus-circle"></i>
+                <h3>Adicione Livros</h3>
+                <p>Cadastre seus livros manualmente ou use a busca automática da Google Books</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-search"></i>
+                <h3>Busque e Filtre</h3>
+                <p>Encontre rapidamente qualquer livro por título, autor ou gênero</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-chart-bar"></i>
+                <h3>Estatísticas</h3>
+                <p>Acompanhe o crescimento da sua biblioteca com estatísticas detalhadas</p>
+            </div>
+        </div>
+        
+        <div class="welcome-actions">
+            <a href="{{ url_for("main.register_page") }}" class="btn btn-primary btn-large">
+                <i class="fas fa-user-plus"></i>
+                Criar Conta Gratuita
+            </a>
+            <a href="{{ url_for("main.login_page") }}" class="btn btn-secondary btn-large">
+                <i class="fas fa-sign-in-alt"></i>
+                Já tenho uma conta
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Conteúdo principal para usuários autenticados -->
+<div id="mainContent" class="container" style="display: none;">
     <div class="page-header">
         <h1>
             <i class="fas fa-book-open"></i>
@@ -36,63 +77,67 @@
             <i class="fas fa-tags"></i>
             <div class="stat-info">
                 <span class="stat-number" id="totalGenres">0</span>
-                <span class="stat-label">Gêneros</span>
+                <span class="stat-label">Gêneros Únicos</span>
             </div>
         </div>
         <div class="stat-card">
-            <i class="fas fa-user-edit"></i>
+            <i class="fas fa-users"></i>
             <div class="stat-info">
                 <span class="stat-number" id="totalAuthors">0</span>
-                <span class="stat-label">Autores</span>
+                <span class="stat-label">Autores Únicos</span>
             </div>
         </div>
     </div>
 
     <div class="books-section">
         <div class="section-header">
-            <h2>Seus Livros</h2>
-            <a href="{{ url_for('main.add_book_page') }}" class="btn btn-primary">
+            <h2>
+                <i class="fas fa-list"></i>
+                Seus Livros
+            </h2>
+            <a href="{{ url_for("main.add_book_page") }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
                 Adicionar Livro
             </a>
         </div>
-        
+
         <div id="booksContainer" class="books-grid">
             <!-- Os livros serão carregados aqui via JavaScript -->
         </div>
-        
+
         <div id="emptyState" class="empty-state" style="display: none;">
             <i class="fas fa-book-open"></i>
-            <h3>Nenhum livro encontrado</h3>
+            <h3>Sua biblioteca está vazia</h3>
             <p>Comece adicionando seu primeiro livro à coleção!</p>
-            <a href="{{ url_for('main.add_book_page') }}" class="btn btn-primary">
+            <a href="{{ url_for("main.add_book_page") }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
                 Adicionar Primeiro Livro
             </a>
         </div>
+
+        <div id="noResults" class="empty-state" style="display: none;">
+            <i class="fas fa-search"></i>
+            <h3>Nenhum livro encontrado</h3>
+            <p>Tente ajustar os filtros de busca.</p>
+        </div>
     </div>
 </div>
 
-<!-- Modal de confirmação para deletar -->
+<!-- Modal de Confirmação de Exclusão -->
 <div id="deleteModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirmar Exclusão</h3>
-            <span class="close">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>Tem certeza que deseja excluir este livro?</p>
-            <p><strong id="bookToDelete"></strong></p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-            <button class="btn btn-danger" onclick="confirmDelete()">Excluir</button>
+        <span class="close" onclick="closeDeleteModal()">&times;</span>
+        <h2>Confirmar Exclusão</h2>
+        <p>Tem certeza que deseja excluir este livro? Esta ação não pode ser desfeita.</p>
+        <div class="modal-actions">
+            <button onclick="closeDeleteModal()" class="btn btn-secondary">Cancelar</button>
+            <button onclick="confirmDelete()" class="btn btn-danger">Excluir</button>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/books.js') }}"></script>
+<script src="{{ url_for("static", filename="js/books.js") }}"></script>
 {% endblock %}
 

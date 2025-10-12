@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Minha Biblioteca</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-book-open"></i>
+                <h1>Minha Biblioteca</h1>
+                <p>Crie sua conta para começar a organizar seus livros</p>
+            </div>
+
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="nickname">
+                        <i class="fas fa-user"></i>
+                        Nickname
+                    </label>
+                    <input type="text" id="nickname" name="nickname" required 
+                           placeholder="Escolha um nickname único" autocomplete="username"
+                           minlength="3" maxlength="80">
+                    <small class="form-help">Mínimo 3 caracteres</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i>
+                        Senha
+                    </label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" required 
+                               placeholder="Crie uma senha segura" autocomplete="new-password"
+                               minlength="6">
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                        </button>
+                    </div>
+                    <small class="form-help">Mínimo 6 caracteres</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock"></i>
+                        Confirmar Senha
+                    </label>
+                    <div class="password-input">
+                        <input type="password" id="confirmPassword" name="confirmPassword" required 
+                               placeholder="Digite a senha novamente" autocomplete="new-password"
+                               minlength="6">
+                        <button type="button" class="password-toggle" onclick="toggleConfirmPassword()">
+                            <i class="fas fa-eye" id="confirmPasswordToggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="registerButton">
+                    <i class="fas fa-user-plus"></i>
+                    Criar Conta
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Já tem uma conta? 
+                    <a href="{{ url_for('main.login_page') }}" class="auth-link">
+                        Faça login aqui
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Notificação -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content notification-modal">
+            <span class="close" onclick="closeNotificationModal()">&times;</span>
+            <div class="notification-content">
+                <i id="notificationIcon" class="fas fa-info-circle"></i>
+                <p id="notificationMessage"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>
+
