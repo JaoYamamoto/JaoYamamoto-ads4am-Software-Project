@@ -40,6 +40,7 @@ class Book(db.Model):
     year = db.Column(db.Integer)
     genre = db.Column(db.String(255))
     description = db.Column(db.Text)
+    cover_image_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Chave estrangeira para o usuário
@@ -56,7 +57,9 @@ class Book(db.Model):
             'year': self.year,
             'genre': self.genre,
             'description': self.description,
+            'cover_image_url': self.cover_image_url,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'user_id': self.user_id
         }
+
 

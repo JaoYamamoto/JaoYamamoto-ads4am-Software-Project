@@ -93,7 +93,8 @@ function getFormData() {
         title: formData.get('title').trim(),
         author: formData.get('author').trim(),
         genre: formData.get('genre').trim() || null,
-        description: formData.get('description').trim() || null
+        description: formData.get('description').trim() || null,
+        cover_image_url: formData.get('cover_image_url') || null // <-- CAMPO ADICIONADO
     };
     
     const year = formData.get('year');
@@ -215,6 +216,9 @@ function clearForm() {
         field.classList.remove('field-error');
         field.style.borderColor = '';
     });
+    
+    // Limpar o campo oculto da capa
+    document.getElementById('cover_image_url').value = '';
 }
 
 // Modal de sucesso
@@ -352,6 +356,9 @@ function selectGoogleBook(book) {
     document.getElementById('genre').value = book.genre || '';
     document.getElementById('description').value = book.description || '';
     
+    // NOVO: Preencher o campo oculto com a URL da capa
+    document.getElementById('cover_image_url').value = book.cover_image_url || '';
+    
     // Limpar a busca
     document.getElementById('googleBooksQuery').value = '';
     hideSearchResults();
@@ -403,5 +410,3 @@ function escapeHtml(text) {
     };
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
-
-

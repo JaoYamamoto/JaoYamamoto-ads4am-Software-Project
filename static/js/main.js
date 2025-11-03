@@ -1,4 +1,5 @@
 function showNotification(type, message) {
+    if (!message) return; // Only show notification if there's a message
     const modal = document.getElementById("notificationModal");
     const icon = document.getElementById("notificationIcon");
     const msg = document.getElementById("notificationMessage");

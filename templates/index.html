@@ -63,6 +63,21 @@
                 <option value="">Todos os gêneros</option>
             </select>
         </div>
+        
+        <!-- NOVO: Controles de Ordenação -->
+        <div class="sort-container">
+            <label for="sortBy" class="sort-label">Ordenar por:</label>
+            <select id="sortBy" class="filter-select">
+                <option value="created_at">Mais Recente</option>
+                <option value="title">Título</option>
+                <option value="author">Autor</option>
+                <option value="year">Ano de Publicação</option>
+            </select>
+            <button id="sortOrder" class="btn btn-icon btn-secondary" data-order="desc">
+                <i class="fas fa-sort-amount-down"></i>
+            </button>
+        </div>
+        
     </div>
 
     <div class="stats-section">
@@ -105,6 +120,17 @@
             <!-- Os livros serão carregados aqui via JavaScript -->
         </div>
 
+        <!-- NOVO: Controles de Paginação -->
+        <div id="paginationControls" class="pagination-controls" style="display: none;">
+            <button id="prevPage" class="btn btn-secondary" disabled>
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span id="pageInfo">Página 1 de 1</span>
+            <button id="nextPage" class="btn btn-secondary" disabled>
+                Próxima <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
         <div id="emptyState" class="empty-state" style="display: none;">
             <i class="fas fa-book-open"></i>
             <h3>Sua biblioteca está vazia</h3>
@@ -140,4 +166,3 @@
 {% block scripts %}
 <script src="{{ url_for("static", filename="js/books.js") }}"></script>
 {% endblock %}
-

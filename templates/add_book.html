@@ -32,6 +32,9 @@
         </div>
 
         <form id="addBookForm" class="book-form">
+            <!-- NOVO CAMPO OCULTO PARA A URL DA CAPA -->
+            <input type="hidden" id="cover_image_url" name="cover_image_url">
+
             <div class="form-group">
                 <label for="title">
                     <i class="fas fa-book"></i>
@@ -120,4 +123,3 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/add_book.js') }}"></script>
 {% endblock %}
-

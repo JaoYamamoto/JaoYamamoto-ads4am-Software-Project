@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import Book, User
 from sqlalchemy import func
+from sqlalchemy.sql.expression import asc, desc
 import requests
 import urllib.parse
 
@@ -122,13 +123,22 @@ def edit_book_page(book_id):
 @main.route('/api/books', methods=['GET'])
 @login_required
 def get_books():
-    """API para obter todos os livros do usuário atual"""
+    """API para obter todos os livros do usuário atual com filtros, ordenação e paginação"""
     search_query = request.args.get('search', '').strip()
     genre_filter = request.args.get('genre', '').strip()
+    
+    # Parâmetros de Ordenação
+    sort_by = request.args.get('sort_by', 'created_at') # Padrão: data de criação
+    order = request.args.get('order', 'desc') # Padrão: descendente
+    
+    # Parâmetros de Paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
 
-    # Filtrar apenas livros do usuário atual
+    # 1. Filtrar apenas livros do usuário atual
     books_query = Book.query.filter_by(user_id=current_user.id)
 
+    # 2. Aplicar Filtros de Busca e Gênero
     if search_query:
         books_query = books_query.filter(
             (Book.title.ilike(f'%{search_query}%')) |
@@ -139,8 +149,43 @@ def get_books():
     if genre_filter and genre_filter.lower() != 'todos':
         books_query = books_query.filter(Book.genre.ilike(f'%{genre_filter}%'))
 
-    books = books_query.all()
-    return jsonify([book.to_dict() for book in books])
+    # 3. Aplicar Ordenação
+    sort_column = None
+    if sort_by == 'title':
+        sort_column = Book.title
+    elif sort_by == 'author':
+        sort_column = Book.author
+    elif sort_by == 'year':
+        sort_column = Book.year
+    else: # Default: created_at
+        sort_column = Book.created_at
+        
+    if sort_column:
+        if order == 'asc':
+            books_query = books_query.order_by(asc(sort_column))
+        else:
+            books_query = books_query.order_by(desc(sort_column))
+
+    # 4. Aplicar Paginação
+    # Usamos o método paginate do SQLAlchemy para lidar com a paginação
+    paginated_books = books_query.paginate(page=page, per_page=per_page, error_out=False)
+
+    # 5. Preparar a resposta
+    books_list = [book.to_dict() for book in paginated_books.items]
+    
+    return jsonify({
+        'books': books_list,
+        'pagination': {
+            'total': paginated_books.total,
+            'pages': paginated_books.pages,
+            'current_page': paginated_books.page,
+            'per_page': paginated_books.per_page,
+            'has_next': paginated_books.has_next,
+            'has_prev': paginated_books.has_prev,
+            'next_num': paginated_books.next_num,
+            'prev_num': paginated_books.prev_num
+        }
+    })
 
 @main.route('/api/books/<int:book_id>', methods=['GET'])
 @login_required
@@ -164,6 +209,7 @@ def create_book():
         year=data.get('year'),
         genre=data.get('genre'),
         description=data.get('description'),
+        cover_image_url=data.get('cover_image_url'), # Adicionado cover_image_url
         user_id=current_user.id  # Associar ao usuário atual
     )
     
@@ -196,6 +242,8 @@ def update_book(book_id):
         book.genre = data['genre']
     if 'description' in data:
         book.description = data['description']
+    if 'cover_image_url' in data: # Adicionado cover_image_url
+        book.cover_image_url = data['cover_image_url']
     
     try:
         db.session.commit()
@@ -292,6 +340,7 @@ def search_google_books():
                     'pageCount': volume_info.get('pageCount'),
                     'language': volume_info.get('language', ''),
                     'thumbnail': volume_info.get('imageLinks', {}).get('thumbnail', ''),
+                    'cover_image_url': volume_info.get('imageLinks', {}).get('thumbnail', ''), # Adicionado cover_image_url
                     'publisher': volume_info.get('publisher', ''),
                     'isbn': None
                 }
@@ -325,4 +374,3 @@ def search_google_books():
         return jsonify({'error': f'Erro ao conectar com a Google Books API: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'Erro interno: {str(e)}'}), 500
-
