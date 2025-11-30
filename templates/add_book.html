@@ -13,28 +13,7 @@
     </div>
 
     <div class="form-container">
-        <!-- Seção de busca na Google Books API -->
-        <div class="google-books-search">
-            <h3><i class="fab fa-google"></i> Buscar na Google Books</h3>
-            <p class="search-subtitle">Digite o nome do livro para preencher automaticamente os campos</p>
-            <div class="search-container">
-                <input type="text" id="googleBooksQuery" placeholder="Digite o nome do livro..." class="form-input search-input">
-                <button type="button" id="searchGoogleBooks" class="btn btn-google">
-                    <i class="fas fa-search"></i>
-                    Buscar
-                </button>
-            </div>
-            <div id="searchResults" class="search-results" style="display: none;"></div>
-        </div>
-
-        <div class="divider">
-            <span>ou preencha manualmente</span>
-        </div>
-
         <form id="addBookForm" class="book-form">
-            <!-- NOVO CAMPO OCULTO PARA A URL DA CAPA -->
-            <input type="hidden" id="cover_image_url" name="cover_image_url">
-
             <div class="form-group">
                 <label for="title">
                     <i class="fas fa-book"></i>
@@ -123,3 +102,4 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/add_book.js') }}"></script>
 {% endblock %}
+

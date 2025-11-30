@@ -13,24 +13,6 @@
     </div>
 
     <div class="form-container">
-        <!-- Seção de busca na Google Books API -->
-        <div class="google-books-search">
-            <h3><i class="fab fa-google"></i> Buscar na Google Books</h3>
-            <p class="search-subtitle">Digite o nome do livro para preencher automaticamente os campos</p>
-            <div class="search-container">
-                <input type="text" id="googleBooksQuery" placeholder="Digite o nome do livro..." class="form-input search-input">
-                <button type="button" id="searchGoogleBooks" class="btn btn-google">
-                    <i class="fas fa-search"></i>
-                    Buscar
-                </button>
-            </div>
-            <div id="searchResults" class="search-results" style="display: none;"></div>
-        </div>
-
-        <div class="divider">
-            <span>ou edite manualmente</span>
-        </div>
-
         <form id="editBookForm" class="book-form">
             <input type="hidden" id="bookId" value="{{ book_id }}">
             
@@ -88,38 +70,6 @@
                 <textarea id="description" name="description" rows="4" class="form-textarea" placeholder="Breve descrição do livro..."></textarea>
             </div>
 
-            <!-- NOVO: Rating (Avaliação em Estrelas) -->
-            <div class="form-group">
-                <label for="rating">
-                    <i class="fas fa-star"></i>
-                    Avaliação
-                </label>
-                <div class="rating-input">
-                    <div id="ratingStars" class="rating-stars">
-                        <span class="star" data-value="1" title="Péssimo">★</span>
-                        <span class="star" data-value="2" title="Ruim">★</span>
-                        <span class="star" data-value="3" title="Bom">★</span>
-                        <span class="star" data-value="4" title="Muito Bom">★</span>
-                        <span class="star" data-value="5" title="Excelente">★</span>
-                    </div>
-                    <input type="hidden" id="rating" name="rating" value="0">
-                    <span id="ratingText" class="rating-text">Sem avaliação</span>
-                </div>
-            </div>
-
-            <!-- NOVO: Status de Leitura -->
-            <div class="form-group">
-                <label for="reading_status">
-                    <i class="fas fa-bookmark"></i>
-                    Status de Leitura
-                </label>
-                <select id="reading_status" name="reading_status" class="form-input">
-                    <option value="want_to_read">Quero Ler</option>
-                    <option value="reading">Lendo</option>
-                    <option value="read">Lido</option>
-                </select>
-            </div>
-
             <div class="form-actions">
                 <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i>
@@ -154,3 +104,4 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/edit_book.js') }}"></script>
 {% endblock %}
+

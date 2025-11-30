@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     setupForm();
     setupModal();
-    setupGoogleBooksSearch(); // Configura a busca da Google Books API
 });
 
 // Configurar formulário
@@ -31,9 +30,7 @@ function setupModal() {
     const modal = document.getElementById('successModal');
     const closeBtn = modal.querySelector('.close');
     
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeSuccessModal);
-    }
+    closeBtn.addEventListener('click', closeSuccessModal);
     
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
@@ -47,7 +44,6 @@ async function handleSubmit(event) {
     event.preventDefault();
     
     if (!validateForm()) {
-        showNotification('warning', 'Por favor, preencha todos os campos obrigatórios corretamente.');
         return;
     }
     
@@ -58,27 +54,14 @@ async function handleSubmit(event) {
         // Desabilitar botão e mostrar loading
         setButtonLoading(submitButton, true);
         
-        const response = await fetch('/api/books', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
+        await BookAPI.post('/api/books', formData);
         
-        if (response.ok) {
-            showNotification('success', data.message);
-            showSuccessModal();
-            clearForm();
-        } else {
-            showNotification('error', data.error || 'Erro ao adicionar livro. Tente novamente.');
-        }
+        showSuccessModal();
+        clearForm();
         
     } catch (error) {
         console.error('Erro ao adicionar livro:', error);
-        showNotification('error', 'Erro de conexão. Tente novamente.');
+        showNotification('Erro ao adicionar livro. Tente novamente.', 'error');
     } finally {
         setButtonLoading(submitButton, false);
     }
@@ -93,8 +76,7 @@ function getFormData() {
         title: formData.get('title').trim(),
         author: formData.get('author').trim(),
         genre: formData.get('genre').trim() || null,
-        description: formData.get('description').trim() || null,
-        cover_image_url: formData.get('cover_image_url') || null // <-- CAMPO ADICIONADO
+        description: formData.get('description').trim() || null
     };
     
     const year = formData.get('year');
@@ -135,7 +117,7 @@ function validateField(event) {
     const field = event.target;
     const value = field.value.trim();
     
-    clearFieldError({ target: field });
+    clearFieldError(event);
     
     if (field.required && !value) {
         showFieldError(field, 'Este campo é obrigatório');
@@ -155,7 +137,7 @@ function validateYear(event) {
     const field = event.target;
     const value = field.value;
     
-    clearFieldError({ target: field });
+    clearFieldError(event);
     
     if (value && (isNaN(value) || value < 1000 || value > new Date().getFullYear() + 1)) {
         showFieldError(field, 'Digite um ano válido');
@@ -177,6 +159,18 @@ function showFieldError(field, message) {
     const errorElement = document.createElement('div');
     errorElement.className = 'field-error-message';
     errorElement.textContent = message;
+    
+    // Adiciona estilos
+    errorElement.style.cssText = `
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    `;
+    
+    errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
     
     // Insere após o campo
     field.parentNode.insertBefore(errorElement, field.nextSibling);
@@ -216,9 +210,6 @@ function clearForm() {
         field.classList.remove('field-error');
         field.style.borderColor = '';
     });
-    
-    // Limpar o campo oculto da capa
-    document.getElementById('cover_image_url').value = '';
 }
 
 // Modal de sucesso
@@ -241,172 +232,31 @@ function setButtonLoading(button, isLoading) {
     }
 }
 
-// Google Books API Integration
-function setupGoogleBooksSearch() {
-    const searchInput = document.getElementById('googleBooksQuery');
-    const searchButton = document.getElementById('searchGoogleBooks');
-    const resultsContainer = document.getElementById('searchResults');
-    
-    if (!searchInput || !searchButton || !resultsContainer) return;
-    
-    // Event listeners
-    searchButton.addEventListener('click', performGoogleBooksSearch);
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            performGoogleBooksSearch();
-        }
-    });
-    
-    // Limpar resultados quando o input for limpo
-    searchInput.addEventListener('input', function() {
-        if (!this.value.trim()) {
-            hideSearchResults();
-        }
-    });
-}
-
-async function performGoogleBooksSearch() {
-    const searchInput = document.getElementById('googleBooksQuery');
-    const searchButton = document.getElementById('searchGoogleBooks');
-    const resultsContainer = document.getElementById('searchResults');
-    
-    const query = searchInput.value.trim();
-    if (!query) {
-        showNotification('warning', 'Digite o nome do livro para buscar');
-        return;
-    }
-    
-    try {
-        // Mostrar loading
-        setSearchButtonLoading(searchButton, true);
-        showSearchLoading(resultsContainer);
-        
-        // Fazer requisição para a API
-        const response = await fetch(`/api/search-google-books?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Erro na busca');
+// Adicionar estilos para campos com erro
+if (!document.querySelector('#form-error-styles')) {
+    const style = document.createElement('style');
+    style.id = 'form-error-styles';
+    style.textContent = `
+        .field-error {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
         }
         
-        // Mostrar resultados
-        displaySearchResults(data, resultsContainer);
+        .field-error-message {
+            animation: slideDown 0.3s ease;
+        }
         
-    } catch (error) {
-        console.error('Erro na busca:', error);
-        showSearchError(resultsContainer, error.message);
-    } finally {
-        setSearchButtonLoading(searchButton, false);
-    }
-}
-
-function showSearchLoading(container) {
-    container.style.display = 'block';
-    container.innerHTML = `
-        <div class="search-loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            Buscando livros na Google Books...
-        </div>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     `;
+    document.head.appendChild(style);
 }
 
-function displaySearchResults(data, container) {
-    container.style.display = 'block';
-    
-    if (!data.books || data.books.length === 0) {
-        container.innerHTML = `
-            <div class="search-no-results">
-                <i class="fas fa-search"></i>
-                Nenhum livro encontrado. Tente uma busca diferente.
-            </div>
-        `;
-        return;
-    }
-    
-    const resultsHTML = data.books.map(book => `
-        <div class="search-result-item" onclick="selectGoogleBook(${escapeHtml(JSON.stringify(book))})">
-            <img src="${book.thumbnail || '/static/img/book-placeholder.png'}" 
-                 alt="${book.title}" 
-                 class="result-thumbnail"
-                 onerror="this.src='/static/img/book-placeholder.png'">
-            <div class="result-info">
-                <div class="result-title">${book.title}</div>
-                <div class="result-author">${book.author || 'Autor não informado'}</div>
-                <div class="result-details">
-                    ${book.year ? `${book.year} • ` : ''}
-                    ${book.genre || 'Gênero não informado'}
-                    ${book.publisher ? ` • ${book.publisher}` : ''}
-                </div>
-                <div class="result-description">
-                    ${book.description ? book.description.substring(0, 150) + '...' : 'Descrição não disponível'}
-                </div>
-            </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = resultsHTML;
-}
-
-function selectGoogleBook(book) {
-    // Preencher os campos do formulário
-    document.getElementById('title').value = book.title || '';
-    document.getElementById('author').value = book.author || '';
-    document.getElementById('year').value = book.year || '';
-    document.getElementById('genre').value = book.genre || '';
-    document.getElementById('description').value = book.description || '';
-    
-    // NOVO: Preencher o campo oculto com a URL da capa
-    document.getElementById('cover_image_url').value = book.cover_image_url || '';
-    
-    // Limpar a busca
-    document.getElementById('googleBooksQuery').value = '';
-    hideSearchResults();
-    
-    // Mostrar notificação de sucesso
-    showNotification('success', 'Campos preenchidos automaticamente!');
-    
-    // Focar no primeiro campo para o usuário revisar
-    document.getElementById('title').focus();
-}
-
-function showSearchError(container, message) {
-    container.style.display = 'block';
-    container.innerHTML = `
-        <div class="search-error">
-            <i class="fas fa-exclamation-triangle"></i>
-            Erro na busca: ${message}
-        </div>
-    `;
-}
-
-function hideSearchResults() {
-    const resultsContainer = document.getElementById('searchResults');
-    if (resultsContainer) {
-        resultsContainer.style.display = 'none';
-        resultsContainer.innerHTML = '';
-    }
-}
-
-function setSearchButtonLoading(button, isLoading) {
-    if (isLoading) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
-    } else {
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-search"></i> Buscar';
-    }
-}
-
-// Função auxiliar para escapar HTML (já deve estar em main.js, mas mantida aqui por segurança)
-function escapeHtml(text) {
-    if (!text) return '';
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
