@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Coleção de Livros{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('main.index') }}" class="nav-brand">
+                <i class="fas fa-book"></i>
+                Minha Biblioteca
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <!-- Links para usuários autenticados -->
+                <li class="nav-item auth-required" style="display: none;">
+                    <a href="{{ url_for('main.index') }}" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        Início
+                    </a>
+                </li>
+                <li class="nav-item auth-required" style="display: none;">
+                    <a href="{{ url_for('main.add_book_page') }}" class="nav-link">
+                        <i class="fas fa-plus"></i>
+                        Adicionar Livro
+                    </a>
+                </li>
+                
+                <!-- Dropdown do usuário -->
+                <li class="nav-item user-dropdown auth-required" style="display: none;">
+                    <a href="#" class="nav-link user-dropdown-toggle" id="userDropdown">
+                        <i class="fas fa-user"></i>
+                        <span id="userNickname">Usuário</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="dropdown-header">Olá, <span id="userNicknameDropdown"></span></div>
+                        <a href="#" class="dropdown-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Sair
+                        </a>
+                    </div>
+                </li>
+                
+                <!-- Links para usuários não autenticados -->
+                <li class="nav-item auth-not-required">
+                    <a href="{{ url_for('main.login_page') }}" class="nav-link">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Entrar
+                    </a>
+                </li>
+                <li class="nav-item auth-not-required">
+                    <a href="{{ url_for('main.register_page') }}" class="nav-link">
+                        <i class="fas fa-user-plus"></i>
+                        Registrar
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Minha Biblioteca. Organize sua coleção de livros.</p>
+        </div>
+    </footer>
+
+    <!-- Modal de Notificação -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content notification-modal">
+            <span class="close" onclick="closeNotificationModal()">&times;</span>
+            <div class="notification-content">
+                <i id="notificationIcon" class="fas fa-info-circle"></i>
+                <p id="notificationMessage"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
+
