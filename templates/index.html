@@ -64,6 +64,27 @@
             </select>
         </div>
         
+        <!-- NOVO: Filtros de Status de Leitura e Avaliacao -->
+        <div class="filter-container">
+            <select id="statusFilter" class="filter-select">
+                <option value="">Todos os Status</option>
+                <option value="want_to_read">Quero Ler</option>
+                <option value="reading">Lendo</option>
+                <option value="read">Lido</option>
+            </select>
+        </div>
+        
+        <div class="filter-container">
+            <select id="ratingFilter" class="filter-select">
+                <option value="">Todas as Avaliacoes</option>
+                <option value="1">1+ Estrela</option>
+                <option value="2">2+ Estrelas</option>
+                <option value="3">3+ Estrelas</option>
+                <option value="4">4+ Estrelas</option>
+                <option value="5">5 Estrelas</option>
+            </select>
+        </div>
+        
         <!-- NOVO: Controles de Ordenação -->
         <div class="sort-container">
             <label for="sortBy" class="sort-label">Ordenar por:</label>
@@ -110,10 +131,21 @@
                 <i class="fas fa-list"></i>
                 Seus Livros
             </h2>
-            <a href="{{ url_for("main.add_book_page") }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Adicionar Livro
-            </a>
+            <div class="header-actions">
+                <a href="{{ url_for("main.add_book_page") }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Adicionar Livro
+                </a>
+                <!-- NOVO: Botoes de Exportacao -->
+                <button id="exportCsvBtn" class="btn btn-secondary" title="Exportar como CSV">
+                    <i class="fas fa-file-csv"></i>
+                    Exportar CSV
+                </button>
+                <button id="exportJsonBtn" class="btn btn-secondary" title="Exportar como JSON">
+                    <i class="fas fa-file-code"></i>
+                    Exportar JSON
+                </button>
+            </div>
         </div>
 
         <div id="booksContainer" class="books-grid">

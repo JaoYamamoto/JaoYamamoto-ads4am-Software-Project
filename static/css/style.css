@@ -637,7 +637,7 @@ body {
 }
 
 .btn-google {
-    background: #667eea;
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #fbbc05 75%, #ea4335 100%);
     color: white;
     border: none;
     padding: 12px 20px;
@@ -1503,4 +1503,113 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 1.1rem;
+}
+
+
+/* ==================== Rating and Reading Status Styles ==================== */
+
+.rating-input {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 5px;
+    font-size: 1.8rem;
+}
+
+.rating-stars .star {
+    cursor: pointer;
+    color: #ddd;
+    transition: all 0.2s ease;
+}
+
+.rating-stars .star:hover,
+.rating-stars .star.active {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.rating-text {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+    min-width: 100px;
+}
+
+/* Estilos para exibicao de rating nos cards */
+.book-rating {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 12px 0;
+    padding: 10px 0;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.rating-display {
+    display: flex;
+    gap: 3px;
+    font-size: 1.1rem;
+}
+
+.rating-display .star {
+    color: #ddd;
+}
+
+.rating-display .star.filled {
+    color: #ffc107;
+}
+
+.reading-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reading-status.status-want_to_read {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.reading-status.status-reading {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.reading-status.status-read {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+
+/* Estilos para header-actions (botoes de acao no header) */
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.header-actions .btn {
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+    }
 }

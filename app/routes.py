@@ -127,6 +127,13 @@ def get_books():
     search_query = request.args.get('search', '').strip()
     genre_filter = request.args.get('genre', '').strip()
     
+    # NOVO: Parametros de Filtro por Status e Avaliacao
+    status_filter = request.args.get('status', '').strip()
+    try:
+        rating_filter = int(request.args.get('min_rating', 0))
+    except (ValueError, TypeError):
+        rating_filter = 0
+    
     # Parâmetros de Ordenação
     sort_by = request.args.get('sort_by', 'created_at') # Padrão: data de criação
     order = request.args.get('order', 'desc') # Padrão: descendente
@@ -148,6 +155,13 @@ def get_books():
     
     if genre_filter and genre_filter.lower() != 'todos':
         books_query = books_query.filter(Book.genre.ilike(f'%{genre_filter}%'))
+    
+    # NOVO: Aplicar Filtros de Status de Leitura e Avaliacao
+    if status_filter and status_filter in ['want_to_read', 'reading', 'read']:
+        books_query = books_query.filter(Book.reading_status == status_filter)
+    
+    if rating_filter and rating_filter > 0:
+        books_query = books_query.filter(Book.rating >= rating_filter)
 
     # 3. Aplicar Ordenação
     sort_column = None
@@ -209,7 +223,9 @@ def create_book():
         year=data.get('year'),
         genre=data.get('genre'),
         description=data.get('description'),
-        cover_image_url=data.get('cover_image_url'), # Adicionado cover_image_url
+        cover_image_url=data.get('cover_image_url'),
+        rating=data.get('rating', 0),  # NOVO: Rating (padrão 0)
+        reading_status=data.get('reading_status', 'want_to_read'),  # NOVO: Status de leitura
         user_id=current_user.id  # Associar ao usuário atual
     )
     
@@ -242,8 +258,12 @@ def update_book(book_id):
         book.genre = data['genre']
     if 'description' in data:
         book.description = data['description']
-    if 'cover_image_url' in data: # Adicionado cover_image_url
+    if 'cover_image_url' in data:
         book.cover_image_url = data['cover_image_url']
+    if 'rating' in data:  # NOVO: Atualizar rating
+        book.rating = data['rating']
+    if 'reading_status' in data:  # NOVO: Atualizar status de leitura
+        book.reading_status = data['reading_status']
     
     try:
         db.session.commit()
@@ -374,3 +394,108 @@ def search_google_books():
         return jsonify({'error': f'Erro ao conectar com a Google Books API: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'Erro interno: {str(e)}'}), 500
+
+
+# ==================== ROTAS DE EXPORTACAO ====================
+
+@main.route('/api/books/export/csv', methods=['GET'])
+@login_required
+def export_books_csv():
+    """API para exportar todos os livros do usuario em formato CSV"""
+    try:
+        # Buscar todos os livros do usuario atual
+        books = Book.query.filter_by(user_id=current_user.id).all()
+        
+        # Criar um arquivo CSV em memoria
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Escrever cabecalho
+        writer.writerow([
+            'ID', 'Titulo', 'Autor', 'Ano', 'Genero', 'Descricao', 
+            'Avaliacao', 'Status de Leitura', 'Data de Criacao'
+        ])
+        
+        # Escrever dados dos livros
+        for book in books:
+            status_labels = {
+                'want_to_read': 'Quero Ler',
+                'reading': 'Lendo',
+                'read': 'Lido'
+            }
+            status_label = status_labels.get(book.reading_status, 'Quero Ler')
+            
+            writer.writerow([
+                book.id,
+                book.title,
+                book.author,
+                book.year or '',
+                book.genre or '',
+                book.description or '',
+                book.rating or 0,
+                status_label,
+                book.created_at.strftime('%Y-%m-%d %H:%M:%S') if book.created_at else ''
+            ])
+        
+        # Preparar o arquivo para download
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'colecao_livros_{current_user.nickname}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        )
+    
+    except Exception as e:
+        return jsonify({'error': f'Erro ao exportar para CSV: {str(e)}'}), 500
+
+
+@main.route('/api/books/export/json', methods=['GET'])
+@login_required
+def export_books_json():
+    """API para exportar todos os livros do usuario em formato JSON"""
+    try:
+        # Buscar todos os livros do usuario atual
+        books = Book.query.filter_by(user_id=current_user.id).all()
+        
+        # Preparar dados para JSON
+        books_data = []
+        for book in books:
+            status_labels = {
+                'want_to_read': 'Quero Ler',
+                'reading': 'Lendo',
+                'read': 'Lido'
+            }
+            status_label = status_labels.get(book.reading_status, 'Quero Ler')
+            
+            books_data.append({
+                'id': book.id,
+                'titulo': book.title,
+                'autor': book.author,
+                'ano': book.year,
+                'genero': book.genre,
+                'descricao': book.description,
+                'avaliacao': book.rating or 0,
+                'status_leitura': status_label,
+                'url_capa': book.cover_image_url,
+                'data_criacao': book.created_at.isoformat() if book.created_at else None
+            })
+        
+        # Preparar o JSON com metadados
+        export_data = {
+            'usuario': current_user.nickname,
+            'data_exportacao': datetime.now().isoformat(),
+            'total_livros': len(books_data),
+            'livros': books_data
+        }
+        
+        # Retornar como download
+        return send_file(
+            io.BytesIO(json.dumps(export_data, ensure_ascii=False, indent=2).encode('utf-8')),
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'colecao_livros_{current_user.nickname}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        )
+    
+    except Exception as e:
+        return jsonify({'error': f'Erro ao exportar para JSON: {str(e)}'}), 500

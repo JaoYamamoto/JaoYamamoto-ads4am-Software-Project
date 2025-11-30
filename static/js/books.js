@@ -5,6 +5,9 @@ let currentSortBy = 'created_at';
 let currentOrder = 'desc';
 let currentSearch = '';
 let currentGenre = '';
+// NOVO: Variáveis para filtros de status e avaliacao
+let currentStatus = '';
+let currentRating = '';
 
 // Variáveis para dados (mantidas para filtros de frontend, mas a API agora gerencia a listagem)
 let allBooks = []; 
@@ -28,6 +31,17 @@ function setupEventListeners() {
     const genreFilter = document.getElementById('genreFilter');
     if (genreFilter) {
         genreFilter.addEventListener('change', handleFilterChange);
+    }
+    
+    // NOVO: Filtros de Status de Leitura e Avaliacao
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', handleFilterChange);
+    }
+    
+    const ratingFilter = document.getElementById('ratingFilter');
+    if (ratingFilter) {
+        ratingFilter.addEventListener('change', handleFilterChange);
     }
     
     // Ordenação
@@ -63,15 +77,34 @@ function setupEventListeners() {
             closeDeleteModal();
         }
     });
+
+    // Exportação
+    const exportCsvButton = document.getElementById('exportCsv');
+    const exportJsonButton = document.getElementById('exportJson');
+    
+    if (exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportToCSV);
+    }
+    
+    if (exportJsonButton) {
+        exportJsonButton.addEventListener('click', exportToJSON);
+    }
+
 }
 
 // Manipular mudança de filtro (busca ou gênero)
 function handleFilterChange(event) {
     const searchInput = document.getElementById('searchInput');
     const genreFilter = document.getElementById('genreFilter');
+    // NOVO: Obter valores dos novos filtros
+    const statusFilter = document.getElementById('statusFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
     
     currentSearch = searchInput.value.trim();
     currentGenre = genreFilter.value;
+    // NOVO: Atualizar variáveis de status e avaliacao
+    currentStatus = statusFilter ? statusFilter.value : '';
+    currentRating = ratingFilter ? ratingFilter.value : '';
     currentPage = 1; // Resetar para a primeira página
     
     loadBooks();
@@ -116,6 +149,9 @@ async function loadBooks() {
             per_page: 10, // Manter fixo por enquanto
             search: currentSearch,
             genre: currentGenre,
+            // NOVO: Adicionar parâmetros de status e avaliacao
+            status: currentStatus,
+            min_rating: currentRating,
             sort_by: currentSortBy,
             order: currentOrder
         });
@@ -158,17 +194,12 @@ function renderBooks(books) {
     
     if (!container || !emptyState || !noResults) return;
 
-    // A lógica de emptyState e noResults agora depende do total de livros retornado pela API
-    // Para simplificar, vamos manter a lógica baseada na lista de livros da página
-    
     if (books.length === 0) {
         if (currentSearch || currentGenre) {
-            // Sem resultados após filtro/busca
             container.innerHTML = '';
             emptyState.style.display = 'none';
             noResults.style.display = 'block';
         } else {
-            // Coleção vazia
             container.innerHTML = '';
             emptyState.style.display = 'block';
             noResults.style.display = 'none';
@@ -179,34 +210,52 @@ function renderBooks(books) {
     emptyState.style.display = 'none';
     noResults.style.display = 'none';
     
-    container.innerHTML = books.map(book => `
-        <div class="book-card" data-book-id="${book.id}">
-            ${book.cover_image_url ? `<img src="${escapeHtml(book.cover_image_url)}" alt="Capa do Livro" class="book-cover">` : ''}
-            <h3 class="book-title">${escapeHtml(book.title)}</h3>
-            <p class="book-author">por ${escapeHtml(book.author)}</p>
-            
-            <div class="book-meta">
-                ${book.year ? `<span class="book-year">${book.year}</span>` : ''}
-                ${book.genre ? `<span class="book-genre">${escapeHtml(book.genre)}</span>` : ''}
+    container.innerHTML = books.map(book => {
+        const ratingStars = Array.from({length: 5}, (_, i) => 
+            `<span class="star ${i < book.rating ? 'filled' : ''}">★</span>`
+        ).join('');
+        
+        const statusLabels = {
+            'want_to_read': 'Quero Ler',
+            'reading': 'Lendo',
+            'read': 'Lido'
+        };
+        const statusLabel = statusLabels[book.reading_status] || 'Quero Ler';
+        
+        return `
+            <div class="book-card" data-book-id="${book.id}">
+                ${book.cover_image_url ? `<img src="${escapeHtml(book.cover_image_url)}" alt="Capa do Livro" class="book-cover">` : ''}
+                <h3 class="book-title">${escapeHtml(book.title)}</h3>
+                <p class="book-author">por ${escapeHtml(book.author)}</p>
+                
+                <div class="book-rating">
+                    <div class="rating-display">${ratingStars}</div>
+                    <span class="reading-status status-${book.reading_status}">${statusLabel}</span>
+                </div>
+                
+                <div class="book-meta">
+                    ${book.year ? `<span class="book-year">${book.year}</span>` : ''}
+                    ${book.genre ? `<span class="book-genre">${escapeHtml(book.genre)}</span>` : ''}
+                </div>
+                
+                ${book.description ? `
+                    <p class="book-description">${escapeHtml(truncateText(book.description, 120))}</p>
+                ` : ''}
+                
+                <div class="book-actions">
+                    <a href="/edit-book/${book.id}" class="btn btn-secondary btn-small">
+                        <i class="fas fa-edit"></i>
+                        Editar
+                    </a>
+                    <button onclick="showDeleteModal(${book.id}, '${escapeHtml(book.title)}')" 
+                            class="btn btn-danger btn-small">
+                        <i class="fas fa-trash"></i>
+                        Excluir
+                    </button>
+                </div>
             </div>
-            
-            ${book.description ? `
-                <p class="book-description">${escapeHtml(truncateText(book.description, 120))}</p>
-            ` : ''}
-            
-            <div class="book-actions">
-                <a href="/edit-book/${book.id}" class="btn btn-secondary btn-small">
-                    <i class="fas fa-edit"></i>
-                    Editar
-                </a>
-                <button onclick="showDeleteModal(${book.id}, '${escapeHtml(book.title)}')" 
-                        class="btn btn-danger btn-small">
-                    <i class="fas fa-trash"></i>
-                    Excluir
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Atualizar estatísticas (AGORA REQUER CHAMADA SEPARADA, POIS A API DE LIVROS É PAGINADA)
@@ -405,5 +454,34 @@ function showEmptyState() {
     
     if (emptyState) {
         emptyState.style.display = 'block';
+    }
+}
+
+
+// ==================== FUNCOES DE EXPORTACAO ====================
+
+// Funcao para exportar para CSV
+function exportToCSV() {
+    try {
+        showNotification('info', 'Iniciando exportacao para CSV...');
+        // Redireciona o navegador para a URL da API, forçando o download
+        window.location.href = '/api/books/export/csv';
+        // A notificação de sucesso é removida, pois o download é assíncrono
+    } catch (error) {
+        console.error('Erro ao exportar para CSV:', error);
+        showNotification('error', 'Erro ao exportar para CSV.');
+    }
+}
+
+// Funcao para exportar para JSON
+function exportToJSON() {
+    try {
+        showNotification('info', 'Iniciando exportacao para JSON...');
+        // Redireciona o navegador para a URL da API, forçando o download
+        window.location.href = '/api/books/export/json';
+        // A notificação de sucesso é removida, pois o download é assíncrono
+    } catch (error) {
+        console.error('Erro ao exportar para JSON:', error);
+        showNotification('error', 'Erro ao exportar para JSON.');
     }
 }

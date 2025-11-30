@@ -12,7 +12,8 @@ def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     
     # Configuração do banco de dados MySQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://book_user:book_password@localhost/book_collection'
+    # Altere em app/__init__.py
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://book_user:book_password@localhost:3306/book_collection'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = 'your-secret-key-here-change-in-production'
     

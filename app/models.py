@@ -9,6 +9,7 @@ class User(UserMixin, db.Model):
     nickname = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relacionamento com livros
     books = db.relationship('Book', backref='owner', lazy=True, cascade='all, delete-orphan')
@@ -29,6 +30,7 @@ class User(UserMixin, db.Model):
             'id': self.id,
             'nickname': self.nickname,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'total_books': len(self.books)
         }
 
@@ -41,7 +43,13 @@ class Book(db.Model):
     genre = db.Column(db.String(255))
     description = db.Column(db.Text)
     cover_image_url = db.Column(db.String(500), nullable=True)
+    
+    # NOVOS CAMPOS: Rating e Status de Leitura
+    rating = db.Column(db.Integer, default=0)  # 0-5 estrelas, 0 = sem avaliação
+    reading_status = db.Column(db.String(50), default='want_to_read')  # want_to_read, reading, read
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Chave estrangeira para o usuário
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -58,8 +66,9 @@ class Book(db.Model):
             'genre': self.genre,
             'description': self.description,
             'cover_image_url': self.cover_image_url,
+            'rating': self.rating,
+            'reading_status': self.reading_status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user_id': self.user_id
         }
-
-

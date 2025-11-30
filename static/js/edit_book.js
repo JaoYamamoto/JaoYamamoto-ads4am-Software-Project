@@ -39,6 +39,14 @@ function populateForm(book) {
     document.getElementById('year').value = book.year || '';
     document.getElementById('genre').value = book.genre || '';
     document.getElementById('description').value = book.description || '';
+    
+    // NOVO: Preencher rating e reading_status
+    const rating = book.rating || 0;
+    document.getElementById('rating').value = rating;
+    setRatingDisplay(rating);
+    
+    const readingStatus = book.reading_status || 'want_to_read';
+    document.getElementById('reading_status').value = readingStatus;
 }
 
 // Configurar formulário
@@ -60,6 +68,60 @@ function setupForm() {
     if (yearField) {
         yearField.addEventListener('input', validateYear);
     }
+    
+    // Configurar estrelas de rating
+    setupRatingStars();
+}
+
+// Configurar estrelas de rating
+function setupRatingStars() {
+    const stars = document.querySelectorAll('#ratingStars .star');
+    const ratingInput = document.getElementById('rating');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const value = this.getAttribute('data-value');
+            ratingInput.value = value;
+            setRatingDisplay(value);
+        });
+        
+        star.addEventListener('mouseover', function() {
+            const value = this.getAttribute('data-value');
+            highlightStars(value);
+        });
+    });
+    
+    // Remover highlight ao sair da area de estrelas
+    document.getElementById('ratingStars').addEventListener('mouseleave', function() {
+        const currentRating = ratingInput.value || 0;
+        setRatingDisplay(currentRating);
+    });
+}
+
+function highlightStars(value) {
+    const stars = document.querySelectorAll('#ratingStars .star');
+    stars.forEach(star => {
+        const starValue = star.getAttribute('data-value');
+        if (starValue <= value) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+function setRatingDisplay(value) {
+    highlightStars(value);
+    const ratingText = document.getElementById('ratingText');
+    const ratings = {
+        '0': 'Sem avaliacao',
+        '1': 'Pessimo',
+        '2': 'Ruim',
+        '3': 'Bom',
+        '4': 'Muito Bom',
+        '5': 'Excelente'
+    };
+    ratingText.textContent = ratings[value] || 'Sem avaliacao';
 }
 
 // Configurar modal
@@ -91,7 +153,7 @@ async function handleSubmit(event) {
         // Desabilitar botão e mostrar loading
         setButtonLoading(submitButton, true);
         
-        await BookAPI.put(`/api/books/${currentBookId}`, formData);
+        await BookAPI.request(`/api/books/${currentBookId}`, 'PUT', formData);
         
         showSuccessModal();
         
@@ -112,7 +174,9 @@ function getFormData() {
         title: formData.get('title').trim(),
         author: formData.get('author').trim(),
         genre: formData.get('genre').trim() || null,
-        description: formData.get('description').trim() || null
+        description: formData.get('description').trim() || null,
+        rating: parseInt(formData.get('rating')) || 0,  // NOVO: Rating
+        reading_status: formData.get('reading_status') || 'want_to_read'  // NOVO: Status de leitura
     };
     
     const year = formData.get('year');
