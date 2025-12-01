@@ -637,7 +637,7 @@ body {
 }
 
 .btn-google {
-    background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #fbbc05 75%, #ea4335 100%);
+    background: #667eea;
     color: white;
     border: none;
     padding: 12px 20px;
